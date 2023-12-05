@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+
+{% load static %}
+{% block content %}
+
+<!-- Main Section Start -->
+<div class="main-section pt-5">
+    <div class="page-section">
+        <div class="container">
+            <div class="row">
+                
+                <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12">
+                    <div class="tabs-holder horizontal">
+                        <ul class="stickynav-tabs nav nav-tabs">
+                            <li class="active"><a data-toggle="tab" href="#home"><i class="fa fa-shopping-cart text-danger"></i>Review Your Billing Address</a></li>
+                            
+                        </ul>
+                        <div class="tab-content">
+                            <div id="home" class="tab-pane in active">
+                                <div class="menu-item-holder">
+                                    
+                                    <div id="menu-item-list-6272" class="menu-itam-list">
+                                        
+                                        <div class="billing-address">
+                                            <div><b>{{ order.name }}</b></div>
+                                            <div>{{ order.address }}</div>
+                                            <div>{{ order.city }} - {{ order.pin_code }}</div>
+                                            <div>{{ order.state }}, {{ order.country }}</div>
+                                            <div><b>Phone: </b>{{ order.phone }}</div>
+                                            <div><b>Email: </b>{{ order.email }}</div>
+                                            <div><b>Payment: </b>{{ order.payment_method }}</div>
+                                            <br>
+                                            <div><a href="{% url 'checkout' %}" class="btn btn-outline-danger">Edit</a></div>
+                                            <br>
+
+                                        </div>
+                                        
+                                    </div>
+
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Your order section -->
+                <div class="col-lg-4 col-md-4 col-sm-4 col-xs-12">
+                    <div class="tabs-holder horizontal">
+                        <ul class="stickynav-tabs nav nav-tabs">
+                            <li class="active"><a data-toggle="tab" href="#home"><i class="icon- icon-room_service"></i>Your Order</a></li>
+                            
+                        </ul>
+                        <div class="tab-content">
+                            <div id="home" class="tab-pane in active">
+                                <div class="menu-item-holder">
+                                    
+                                    <div>
+
+                                        <table class="table">
+                                            <tbody>
+                                                {% for item in cart_items %}
+                                                <tr>
+                                                    <td><img src="{{ item.product.image.url }}" width="40" alt="Food Image"></td>
+                                                    <td><b>{{ item.product }}</b></td>
+                                                    <td>{{ item.quantity }}</td>
+                                                    <td>${{ item.product.price }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+
+                                        <ul>
+                                            <li style="list-style-type: none;">
+                                                Subtotal
+                                                <span class="price float-right">
+                                                    <span class="currency">$</span>
+                                                    <span id="subtotal">{{ subtotal }}</span>
+                                                </span>
+                                            </li>
+
+                                            <li style="list-style-type: none; font-weight: 600;">
+                                                TOTAL
+                                                <span class="price float-right">
+                                                    <span class="currency">$</span>
+                                                    <span id="total">{{ grand_total }}</span>
+                                                </span>
+                                            </li>
+
+                                            {% if order.payment_method == 'COD' %}
+                                            <!-- PayPal Checkout Button -->
+                                            <button onclick="sendTransaction('COD')" class="btn btn-danger w-100 p-2 mt-3">Pay  Now</button>
+                                            {% elif order.payment_method == 'Prepaid' %}
+                                            <button onclick="sendTransaction('Prepaid')" class="btn btn-danger w-100 p-2 mt-3">Pay  Now</button>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Main Section End -->
+
+
+<script>
+    function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+
+    var grand_total = "{{ grand_total }}"
+    var url = "{% url 'payments' %}"
+    var order_number = "{{ order.order_number }}"
+    const csrftoken = getCookie('csrftoken');
+    var order_complete = "{% url 'order_complete' %}"
+    console.log('csrftoken===>', csrftoken)
+
+    const uid = function(){
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+    // Send the data to payments view to store in the database
+    function sendTransaction(payment_method){
+        $.ajax({
+            type: 'POST',
+            url: url,
+            data: {
+                'order_number': order_number,
+                'transaction_id': uid,
+                'payment_method': payment_method,
+                'status': "SUCCESS",
+                'csrfmiddlewaretoken': csrftoken
+            },
+            success: function(response){
+                console.log('response==>', response)
+                window.location.href = order_complete +'?order_no='+response.order_number+'&trans_id='+response.transaction_id
+            }
+        })
+    }
+
+</script>
+{% endblock %}
